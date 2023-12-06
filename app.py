@@ -22,6 +22,11 @@ def create_room():
     args = request.args
     return BusinessLogic.createRoom(args.get("ownerId"))
 
+@app.route('/room_result', methods=['GET'])
+def room_result():
+    args = request.args
+    return BusinessLogic.getRoomResult(args.get("roomId"))
+
 @app.route('/select_films', methods=['POST'])
 def select_films():
     input_json = request.get_json(force=True)

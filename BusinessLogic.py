@@ -35,12 +35,38 @@ def createRoom(ownerId: str) -> str:
     # json_result = json.dumps(room_data, indent=4)
     randomFilmsList = NetworkRequests.getRandomFilmsArray()
 
-    random_int = random.randint(10**7, 10**8 - 1)
+    random_int = random.randint(10 ** 7, 10 ** 8 - 1)
     random_int_str = str(random_int).zfill(8)
 
-    rooms_ref.document(random_int_str).set({"films": randomFilmsList, "ownerId": ownerId})
+    rooms_ref.document(random_int_str).set({"films": randomFilmsList, "ownerId": ownerId, "isRoomCompleted": False})
 
     return random_int_str
+
+
+def getRoomResult(roomId: str) -> str:
+    snapshot = rooms_ref.document(roomId).get()
+
+    if snapshot.exists:
+        doc_dict = snapshot.to_dict()
+
+        commonFilms = []
+
+        print(doc_dict["ownerFilmsIds"])
+        print(doc_dict["userFilmsIds"])
+
+        for ownerFilmId in doc_dict["ownerFilmsIds"]:
+            for userFilmId in doc_dict["userFilmsIds"]:
+                if userFilmId == ownerFilmId:
+                    for film in doc_dict["films"]:
+                        if userFilmId == film["id"]:
+                            commonFilms.append(film)
+
+        return json.dumps(commonFilms, indent=4)
+    else:
+        return "Document not found"
+
+    return random_int_str
+
 
 def getRoom(id: str, userId: str) -> str:
     result = rooms_ref.document(id)
@@ -51,6 +77,8 @@ def getRoom(id: str, userId: str) -> str:
         return json.dumps(doc_dict, indent=4)
     else:
         return "Document not found"
+
+
 def selectFilmsInRoom(model) -> bool:
     print(model)
 
@@ -74,12 +102,14 @@ def selectFilmsInRoom(model) -> bool:
         room = room_ref.get().to_dict()
 
         if room.get('ownerFilmsIds') and room.get('userFilmsIds'):
+            room_ref.set({"isRoomCompleted": True}, merge=True)
             notifyUsersThatRoomComplete(room.get('ownerId'), room.get('userId'), model.roomId)
             return True
 
         return False
     else:
         return "Document not found"
+
 
 def notifyUsersThatRoomComplete(ownerId, userId, roomId):
     print(ownerId)
